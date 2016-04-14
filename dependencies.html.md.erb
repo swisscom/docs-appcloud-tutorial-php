@@ -1,0 +1,67 @@
+---
+title: Declare App Dependencies
+owner: David Weber
+---
+
+<strong><%= modified_date %></strong>
+
+<%= vars.product_short %> recognizes an app as PHP by the existence of a PHP file in the root directory.
+
+The demo app you deployed has a `composer.json` to require additional dependencies, and it looks something like this:
+
+```JSON
+{
+    "name": "laravel/lumen",
+    "description": "The Laravel Lumen Framework.",
+    "keywords": ["framework", "laravel", "lumen"],
+    "license": "MIT",
+    "type": "project",
+    "require": {
+        "laravel/lumen-framework": "5.2.*",
+        "vlucas/phpdotenv": "~2.2",
+        "fzaninotto/faker": "~1.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests/",
+            "database/"
+        ]
+    }
+}
+```
+
+The `composer.json` file determines both the version of PHP that will be used to run your application on <%= vars.product_short %>, as well as the dependencies that should be installed with your application. When an app is deployed, <%= vars.product_short %> reads this file and installs the appropriate PHP version together with the dependencies using the `composer install` command.
+
+Run this command in your local directory to install the dependencies, preparing your system for running the app locally:
+
+<pre class="terminal">
+$ composer install
+Loading composer repositories with package information
+Installing dependencies (including require-dev) from lock file
+...
+Generating autoload files
+</pre>
+
+Once dependencies are installed, you will be ready to run your app locally.
+
+Upon running `cf push`, we will also push our whole dependencies folder `vendor`. Since Cloud Foundry runs `composer install` anyways, this is redunant and should be omitted to save bandwidth and even more importantly: time. You can create a `.cfignore` file which works just like a `.gitignore` file and which tells Cloud Foundry what files should be excluded when pushing. Let's create a `.cfignore` file and exclude the `vendor` folder:
+
+```
+vendor
+```
+
+<p class="note">
+  <strong>Pro Tip</strong>: If you are pushing the <code>composer.lock</code>, the dependencies version are locked.
+</p>
+
+<div style="text-align:center;margin:3em;">
+  <a href="./run-locally.html" class="btn btn-primary">I've installed the App dependencies locally</a>
+</div>

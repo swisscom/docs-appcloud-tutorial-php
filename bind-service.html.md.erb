@@ -1,0 +1,154 @@
+---
+title: Bind a Service to Your App
+owner: David Weber
+---
+
+<strong><%= modified_date %></strong>
+
+The <a href="../service-offerings/index.html" target="_blank">service marketplace</a> has a large number of data stores, from Redis and MongoDB, to MariaDB (fork of MySQL) and RabbitMQ. You can run `cf marketplace` to get an overview. In this step you will add a small MariaDB database to your app.
+
+Create the database:
+
+<pre class="terminal">
+$ cf create-service mariadb small my-maria
+Creating service instance my-maria in org MyOrg / space MySpace as user@mydomain.com...
+OK
+
+Create in progress. Use 'cf services' or 'cf service my-maria' to check operation status.
+
+Attention: The plan `small` of service `mariadb` is not free.  The instance `my-maria` will incur a cost.  Contact your administrator if you think this is in error.
+</pre>
+
+This creates a small MariaDB database for you which we now have to bind to our application. Binding means that the credentials and URL of the service will be written dynamically into the environment variables of the app as `VCAP_SERVICES` and can hence be used directly from there.
+
+Let's bind the new service to our existing application:
+
+<pre class="terminal">
+$ cf bind-service my-php-app my-maria
+Binding service my-maria to app my-php-app in org MyOrg / space MySpace as user@mydomain.com...
+OK
+TIP: Use 'cf restage my-php-app' to ensure your env variable changes take effect
+</pre>
+
+After that we restage the application as suggested so that it includes the new credentials in its environment variables:
+
+<pre class="terminal">
+$ cf restage my-php-app
+Restaging app my-app in org MyOrg / space MySpace as user@mydomain.com...
+-----> Downloaded app package (8.0K)
+-------> Buildpack version 1.5.8
+-----> Creating runtime environment
+
+...
+</pre>
+
+Now we want to consume our new MongoDB from within our application. Lucky for you, Laravel Lumen has already everything to handle your service.
+
+Now you can have a look at `app/Http/routes.php`. The following code will work with your serive:
+
+```php
+$app->get('/migrate', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        return response()->json(['migrated' => true]);
+    } catch (Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTrace()
+        ]);
+    }
+});
+
+$app->get('/users/add/{amount}', function ($amount) {
+    $faker = Faker\Factory::create();
+    $users = [];
+
+    for ($i = 0; $i < $amount; $i++) {
+        array_push($users, [
+          'firstName' => $faker->firstName,
+          'lastName' => $faker->lastName,
+          'birthday' => $faker->date(),
+          'email' => $i . $faker->email,
+          'password' => $faker->password
+        ]);
+    }
+    try {
+        \Illuminate\Support\Facades\DB::table('users')->insert($users);
+        return response()->json([
+          'amount' => $amount,
+          'users added' => $users
+        ]);
+    } catch (Exception $e) {
+        return response()->json(
+          [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTrace()
+          ]
+        );
+    }
+});
+
+$app->get('/users', function () {
+    $result = \Illuminate\Support\Facades\DB::table('users')->get();
+    $count = \Illuminate\Support\Facades\DB::table('users')->count();
+    return response()->json([
+      'count' => $count,
+      'users' => $result
+    ]);
+});
+
+$app->get('/users/delete', function () {
+    \Illuminate\Support\Facades\DB::table('users')->truncate();
+    $result = \Illuminate\Support\Facades\DB::table('users')->get();
+    return response()->json(['users' => $result]);
+});
+
+```
+
+Your service (my-maria) connection settings are stored in `$_ENV['VCAP_SERVICES']`.
+
+As the PHP buildpack stores all composer dependencies in special folder (lib), you have to handle that in `bootstrap/app.php`:
+```php
+3. $cfEnv = $_ENV['VCAP_SERVICES'];
+4. if (isset($cfEnv)) {
+5.     require_once __DIR__ . '/../lib/vendor/autoload.php';
+6. } else {
+7.     require_once __DIR__ . '/../vendor/autoload.php';
+8. }
+```
+
+You also have to pass the my-maria connection settings to Laravel Lumen as illustrated in this file `config/database.php`:
+```php
+2. $cfEnv = $_ENV['VCAP_SERVICES'];
+3. if (isset($cfEnv)) {
+4.     try {
+5.         $vcapServices = json_decode($_ENV['VCAP_SERVICES']);
+6.         $mariaDbConnection = head($vcapServices->mariadb)->credentials;
+7.
+8.         putenv('DB_CONNECTION=mysql');
+9.         putenv('DB_HOST=' . $mariaDbConnection->host);
+10.        putenv('DB_PORT=' . $mariaDbConnection->port);
+11.        putenv('DB_DATABASE=' . $mariaDbConnection->database);
+12.        putenv('DB_USERNAME=' . $mariaDbConnection->username);
+13.        putenv('DB_PASSWORD=' . $mariaDbConnection->password);
+14.        putenv('APP_ENV=production');
+15.        putenv('APP_DEBUG=false');
+16.        putenv('APP_KEY=CFENV!!!');
+17.    }
+18.    catch (Exception $e) {
+19.        dd($e->getMessage());
+20.    }
+21.}
+```
+
+This checks if the app is running in the cloud. If not, it falls back to to use the values in `.env`. This allows you to run your app locally as well as in the cloud without having to configure anything differently. So let's push it to the cloud using
+
+<pre class="terminal">
+$ cf push my-php-app
+</pre>
+
+You can access other services like Redis or MongoDB in a similar matter, simply by binding them to your app and accessing them through the environment variables.
+
+<div style="text-align:center;padding:3em;">
+  <a href="./manifest.html" class="btn btn-primary">I've bound a service to my App</a>
+</div>
