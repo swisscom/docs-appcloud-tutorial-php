@@ -10,13 +10,13 @@ The <a href="../service-offerings/index.html" target="_blank">service marketplac
 Create the database:
 
 <pre class="terminal">
-$ cf create-service mariadb small my-maria
-Creating service instance my-maria in org MyOrg / space MySpace as user@mydomain.com...
+$ cf create-service mariadb small my-mariadb
+Creating service instance my-mariadb in org MyOrg / space MySpace as user@mydomain.com...
 OK
 
-Create in progress. Use 'cf services' or 'cf service my-maria' to check operation status.
+Create in progress. Use 'cf services' or 'cf service my-mariadb' to check operation status.
 
-Attention: The plan `small` of service `mariadb` is not free.  The instance `my-maria` will incur a cost.  Contact your administrator if you think this is in error.
+Attention: The plan `small` of service `mariadb` is not free.  The instance `my-mariadb` will incur a cost.  Contact your administrator if you think this is in error.
 </pre>
 
 This creates a small MariaDB database for you which we now have to bind to our application. Binding means that the credentials and URL of the service will be written dynamically into the environment variables of the app as `VCAP_SERVICES` and can hence be used directly from there.
@@ -24,8 +24,8 @@ This creates a small MariaDB database for you which we now have to bind to our a
 Let's bind the new service to our existing application:
 
 <pre class="terminal">
-$ cf bind-service my-php-app my-maria
-Binding service my-maria to app my-php-app in org MyOrg / space MySpace as user@mydomain.com...
+$ cf bind-service my-php-app my-mariadb
+Binding service my-mariadb to app my-php-app in org MyOrg / space MySpace as user@mydomain.com...
 OK
 TIP: Use 'cf restage my-php-app' to ensure your env variable changes take effect
 </pre>
@@ -36,15 +36,14 @@ After that we restage the application as suggested so that it includes the new c
 $ cf restage my-php-app
 Restaging app my-app in org MyOrg / space MySpace as user@mydomain.com...
 -----> Downloaded app package (8.0K)
--------> Buildpack version 1.5.8
 -----> Creating runtime environment
 
 ...
 </pre>
 
-Now we want to consume our new MongoDB from within our application. Lucky for you, Laravel Lumen has already everything to handle your service.
+Now we want to consume our new MariaDB from within our application. Lucky you! Laravel Lumen already comes with everything you need to handle your database.
 
-Now you can have a look at `app/Http/routes.php`. The following code will work with your serive:
+Have a look at `app/Http/routes.php`. The following code will work with your database:
 
 ```php
 $app->get('/migrate', function () {
@@ -105,40 +104,42 @@ $app->get('/users/delete', function () {
 
 ```
 
-Your service (my-maria) connection settings are stored in `$_ENV['VCAP_SERVICES']`.
+Your MariaDB's connection credentials are all stored in the environment variable `$_ENV['VCAP_SERVICES']`.
 
-As the PHP buildpack stores all composer dependencies in special folder (lib), you have to handle that in `bootstrap/app.php`:
+As the PHP buildpack stores all composer dependencies in a special folder (lib), you have to handle that in `bootstrap/app.php`:
+
 ```php
-3. $cfEnv = $_ENV['VCAP_SERVICES'];
-4. if (isset($cfEnv)) {
-5.     require_once __DIR__ . '/../lib/vendor/autoload.php';
-6. } else {
-7.     require_once __DIR__ . '/../vendor/autoload.php';
-8. }
+$cfEnv = $_ENV['VCAP_SERVICES'];
+if (isset($cfEnv)) {
+    require_once __DIR__ . '/../lib/vendor/autoload.php';
+} else {
+    require_once __DIR__ . '/../vendor/autoload.php';
+}
 ```
 
-You also have to pass the my-maria connection settings to Laravel Lumen as illustrated in this file `config/database.php`:
+You also have to pass the MariaDB connection credentials to Laravel Lumen as illustrated in the file `config/database.php`:
+
 ```php
-2. $cfEnv = $_ENV['VCAP_SERVICES'];
-3. if (isset($cfEnv)) {
-4.     try {
-5.         $vcapServices = json_decode($_ENV['VCAP_SERVICES']);
-6.         $mariaDbConnection = head($vcapServices->mariadb)->credentials;
-7.
-8.         putenv('DB_CONNECTION=mysql');
-9.         putenv('DB_HOST=' . $mariaDbConnection->host);
-10.        putenv('DB_PORT=' . $mariaDbConnection->port);
-11.        putenv('DB_DATABASE=' . $mariaDbConnection->database);
-12.        putenv('DB_USERNAME=' . $mariaDbConnection->username);
-13.        putenv('DB_PASSWORD=' . $mariaDbConnection->password);
-14.        putenv('APP_ENV=production');
-15.        putenv('APP_DEBUG=false');
-16.        putenv('APP_KEY=CFENV!!!');
-17.    }
-18.    catch (Exception $e) {
-19.        dd($e->getMessage());
-20.    }
-21.}
+$cfEnv = $_ENV['VCAP_SERVICES'];
+if (isset($cfEnv)) {
+    try {
+        $vcapServices = json_decode($_ENV['VCAP_SERVICES']);
+        $mariaDbConnection = head($vcapServices->mariadb)->credentials;
+
+        putenv('DB_CONNECTION=mysql');
+        putenv('DB_HOST=' . $mariaDbConnection->host);
+        putenv('DB_PORT=' . $mariaDbConnection->port);
+        putenv('DB_DATABASE=' . $mariaDbConnection->database);
+        putenv('DB_USERNAME=' . $mariaDbConnection->username);
+        putenv('DB_PASSWORD=' . $mariaDbConnection->password);
+        putenv('APP_ENV=production');
+        putenv('APP_DEBUG=false');
+        putenv('APP_KEY=CFENV!!!');
+    }
+    catch (Exception $e) {
+        dd($e->getMessage());
+    }
+}
 ```
 
 This checks if the app is running in the cloud. If not, it falls back to to use the values in `.env`. This allows you to run your app locally as well as in the cloud without having to configure anything differently. So let's push it to the cloud using
