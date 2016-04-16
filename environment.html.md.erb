@@ -7,11 +7,11 @@ owner: David Weber
 
 <%= vars.product_short %> lets you externalize configuration - storing data such as encryption keys or external resource addresses in <a href="../devguide/deploy-apps/environment-variable.html" target="_blank">environment variables</a>.
 
-At runtime, environment variables are exposed to the application through its environment. You can use these for example to pass PHP some information.
+At runtime, environment variables are exposed to the application through its environment. You can use these to configure different parameters of your app or to change the mode your app runs in. Here's an example:
 
 <pre class="terminal">
-$ cf set-env my-php-app KITTEN development
-Setting env variable 'KITTEN' to 'development' for app my-php-app in org MyOrg / space MySpace as user@smydomain.com...
+$ cf set-env my-php-app APP_MODE development
+Setting env variable 'APP_MODE' to 'development' for app my-php-app in org MyOrg / space MySpace as user@smydomain.com...
 OK
 TIP: Use 'cf restage' to ensure your env variable changes take effect
 </pre>
@@ -23,12 +23,11 @@ $ cf restage my-php-app
 Restaging app my-php-app in org MyOrg / space MySpace as user@mydomain.com...
 -----> Downloaded app package (8.0K)
 -----> Downloaded app buildpack cache (2.3M)
--------> Buildpack version 1.5.8
 
 ...
 </pre>
 
-All environment variables are accessed using the `$_ENV` or Laravel Lumen style with `env()` namespace from within your PHP app.
+All environment variables are accessed using `$_ENV['ENV_VARIABLE']` or the Lumen specific style with `env('ENV_VARIABLE')`.
 
 <div style="text-align:center;margin:3em;">
   <a href="./bind-service.html" class="btn btn-primary">I've set my environment variable</a>

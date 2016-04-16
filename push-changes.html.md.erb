@@ -5,23 +5,23 @@ owner: David Weber
 
 <strong><%= modified_date %></strong>
 
-In this step you’ll learn how to propagate a local change to the application through to <%= vars.product_short %>. As a simple change, we'll modify the title which the app shows.
+In this step you’ll learn how to propagate a local change to the application through to <%= vars.product_short %>. As a simple change, we'll have the app expose the framework version on an endpoint.
 
-Change the json output for url `/version` in the `app/Http/routes.php` file to show the framework version. Your final result should look something like this:
+Change the JSON output for the route `/version` in the `app/Http/routes.php` file to show the framework version. Your final result should look something like this:
 
 ```php
-25. $app->get('/version', function () use ($app) {
-26.    return response()->json([ 'version' => $app->version()]);
-27. });
+$app->get('/version', function () use ($app) {
+  return response()->json([ 'version' => $app->version()]);
+});
 ```
 
 Now test locally:
 
 <pre class="terminal">
-$ php -S localhost:8000 -t public
+$ php -S localhost:3000 -t public
 </pre>
 
-Visiting your application at <a href="http://localhost:8000/version" target="_blank">http://localhost:8000/version</a>, you should see the framework version. **You are awesome!**
+Visiting your application at <a href="http://localhost:3000/version" target="_blank">http://localhost:3000/version</a>, you should see the framework version.
 
 Now deploy. All you need to do is `cf push` again:
 
