@@ -38,12 +38,12 @@ The demo app you deployed has a `composer.json` to require additional dependenci
 }
 ```
 
-The `composer.json` file determines the dependencies that should be installed with your application. When an app is deployed, <%= vars.product_short %> reads this file and installs the appropriate dependencies using the `php composer.phar install` command.
+The `composer.json` file determines the dependencies that should be installed with your application. When an app is deployed, <%= vars.product_short %> reads this file and installs the appropriate dependencies using the `composer install` command.
 
 Run this command in your local directory to install the dependencies, preparing your system for running the app locally:
 
 <pre class="terminal">
-$ php composer.phar install
+$ composer install
 Loading composer repositories with package information
 Installing dependencies (including require-dev) from lock file
 
@@ -54,7 +54,7 @@ Generating autoload files
 
 Once dependencies are installed, you will be ready to run your app locally.
 
-Upon running `cf push`, we will also push our whole dependencies folder `vendor`. Since Cloud Foundry runs `php composer.phar install` anyways, this is redundant and should be omitted to save bandwidth and even more importantly: time. You can create a `.cfignore` file which works just like a `.gitignore` file and which tells Cloud Foundry what files should be excluded when pushing. Let's create a `.cfignore` file and exclude the `vendor` folder:
+Upon running `cf push`, we will also push our whole dependencies folder `vendor`. Since Cloud Foundry runs `composer install` anyways, this is redundant and should be omitted to save bandwidth and even more importantly: time. You can create a `.cfignore` file which works just like a `.gitignore` file and which tells Cloud Foundry what files should be excluded when pushing. Let's create a `.cfignore` file and exclude the `vendor` folder:
 
 ```txt
 vendor
