@@ -106,7 +106,7 @@ $app->get('/users/delete', function () {
 
 Your MariaDB's connection credentials are all stored in the environment variable `$_ENV['VCAP_SERVICES']`.
 
-As the PHP buildpack stores all composer dependencies in a special folder (lib), you have to handle that in `bootstrap/app.php`:
+As the PHP buildpack stores all Composer dependencies in a special folder (lib), you have to handle that in `bootstrap/app.php`:
 
 ```php
 $cfEnv = $_ENV['VCAP_SERVICES'];
