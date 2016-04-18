@@ -56,7 +56,7 @@ Once dependencies are installed, you will be ready to run your app locally.
 
 Upon running `cf push`, we will also push our whole dependencies folder `vendor`. Since Cloud Foundry runs `php composer.phar install` anyways, this is redundant and should be omitted to save bandwidth and even more importantly: time. You can create a `.cfignore` file which works just like a `.gitignore` file and which tells Cloud Foundry what files should be excluded when pushing. Let's create a `.cfignore` file and exclude the `vendor` folder:
 
-```
+```txt
 vendor
 ```
 
