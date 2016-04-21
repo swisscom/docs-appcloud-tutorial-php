@@ -7,7 +7,7 @@ owner: David Weber
 
 In this step you’ll learn how to propagate a local change to the application through to <%= vars.product_short %>. As a simple change, we'll have the app expose the framework version on an endpoint.
 
-Change the JSON output for the route `/version` in the `app/Http/routes.php` file to show the framework version. Your final result should look something like this:
+Add the `/version` route to the `app/Http/routes.php` file to show the framework version. Your final added route should look something like this:
 
 ```php
 $app->get('/version', function () use ($app) {

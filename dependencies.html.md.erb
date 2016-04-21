@@ -17,6 +17,7 @@ The demo app you deployed has a `composer.json` to require additional dependenci
   "license": "MIT",
   "type": "project",
   "require": {
+    "php": ">=7.0.0",
     "laravel/lumen-framework": "5.2.*",
     "vlucas/phpdotenv": "~2.2",
     "fzaninotto/faker": "~1.4"
@@ -38,7 +39,7 @@ The demo app you deployed has a `composer.json` to require additional dependenci
 }
 ```
 
-The `composer.json` file determines the dependencies that should be installed with your application. When an app is deployed, <%= vars.product_short %> reads this file and installs the appropriate dependencies using the `composer install` command.
+The `composer.json` file determines both the version of PHP that will be used to run your application on <%= vars.product_short %>, as well as the dependencies that should be installed with your application. When an app is deployed, <%= vars.product_short %> reads this file and installs the appropriate PHP version together with the dependencies using the `composer install` command.
 
 Run this command in your local directory to install the dependencies, preparing your system for running the app locally:
 
