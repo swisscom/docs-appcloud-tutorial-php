@@ -43,7 +43,37 @@ Restaging app my-app in org MyOrg / space MySpace as user@mydomain.com...
 
 Now we want to consume our new MariaDB from within our application. Lucky you! Laravel Lumen already comes with everything you need to handle your database.
 
-Have a look at `app/Http/routes.php`. The following code will work with your database:
+Your MariaDB's connection credentials are all stored in the environment variable `$_ENV['VCAP_SERVICES']`.
+
+You also have to pass the MariaDB connection credentials to Laravel Lumen in the file `config/database.php`. Add the following code right before the `return` statement:
+
+```php
+$cfEnv = $_ENV['VCAP_SERVICES'];
+if (isset($cfEnv)) {
+    try {
+        $vcapServices = json_decode($_ENV['VCAP_SERVICES']);
+        $mariaDbConnection = head($vcapServices->mariadb)->credentials;
+
+        putenv('DB_CONNECTION=mysql');
+        putenv('DB_HOST=' . $mariaDbConnection->host);
+        putenv('DB_PORT=' . $mariaDbConnection->port);
+        putenv('DB_DATABASE=' . $mariaDbConnection->database);
+        putenv('DB_USERNAME=' . $mariaDbConnection->username);
+        putenv('DB_PASSWORD=' . $mariaDbConnection->password);
+        putenv('APP_ENV=production');
+        putenv('APP_DEBUG=false');
+        putenv('APP_KEY=CFENV!!!');
+    }
+    catch (Exception $e) {
+        dd($e->getMessage());
+    }
+}
+```
+This checks if the app is running in the cloud. If not, it falls back to to use the values in `.env`. This allows you to run your app locally as well as in the cloud without having to configure anything differently.
+
+Now we like to apply some changes to `app/Http/routes.php`.
+
+Add the following code to have a route which triggers some migration task:
 
 ```php
 $app->get('/migrate', function () {
@@ -58,6 +88,12 @@ $app->get('/migrate', function () {
     }
 });
 
+```
+This migration tasks takes all migration files from `database/migrations/*` and executes the SQL code so we have some tables in our MariaDB.
+
+Next we add some routes to make actual changes on the database:
+
+```php
 $app->get('/users/add/{amount}', function ($amount) {
     $faker = Faker\Factory::create();
     $users = [];
@@ -101,49 +137,30 @@ $app->get('/users/delete', function () {
     $result = \Illuminate\Support\Facades\DB::table('users')->get();
     return response()->json(['users' => $result]);
 });
-
 ```
+In patricular we have now the following abilities:
+1. Add a costum amount of users to the database
+2. Read all users
+3. Delete all users
 
-Your MariaDB's connection credentials are all stored in the environment variable `$_ENV['VCAP_SERVICES']`.
-
-As the PHP buildpack stores all Composer dependencies in a special folder (lib), you have to handle that in `bootstrap/app.php`:
+At last we make a change to the already existing route `/` (index). We have to add the missing routes we created just before.
 
 ```php
-$cfEnv = $_ENV['VCAP_SERVICES'];
-if (isset($cfEnv)) {
-    require_once __DIR__ . '/../lib/vendor/autoload.php';
-} else {
-    require_once __DIR__ . '/../vendor/autoload.php';
-}
+$app->get('/', function () {
+    return response()->json([ 'links' => [
+      url('/version'),
+      url('/env'),
+      url('/migrate'),
+      url('/users'),
+      url('/users/add/5'),
+      url('/users/delete')
+    ]]);
+});
 ```
+This should be the final looking of the index route.
 
-You also have to pass the MariaDB connection credentials to Laravel Lumen as illustrated in the file `config/database.php`:
 
-```php
-$cfEnv = $_ENV['VCAP_SERVICES'];
-if (isset($cfEnv)) {
-    try {
-        $vcapServices = json_decode($_ENV['VCAP_SERVICES']);
-        $mariaDbConnection = head($vcapServices->mariadb)->credentials;
-
-        putenv('DB_CONNECTION=mysql');
-        putenv('DB_HOST=' . $mariaDbConnection->host);
-        putenv('DB_PORT=' . $mariaDbConnection->port);
-        putenv('DB_DATABASE=' . $mariaDbConnection->database);
-        putenv('DB_USERNAME=' . $mariaDbConnection->username);
-        putenv('DB_PASSWORD=' . $mariaDbConnection->password);
-        putenv('APP_ENV=production');
-        putenv('APP_DEBUG=false');
-        putenv('APP_KEY=CFENV!!!');
-    }
-    catch (Exception $e) {
-        dd($e->getMessage());
-    }
-}
-```
-
-This checks if the app is running in the cloud. If not, it falls back to to use the values in `.env`. This allows you to run your app locally as well as in the cloud without having to configure anything differently. So let's push it to the cloud using
-
+So let's push all these changes to the cloud using
 <pre class="terminal">
 $ cf push my-php-app
 </pre>

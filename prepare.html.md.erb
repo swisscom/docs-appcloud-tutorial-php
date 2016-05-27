@@ -15,6 +15,10 @@ $ cd cf-sample-app-php
 
 You now have a functioning git repository that contains a simple <a href="https://lumen.laravel.com/" target="_blank">Lumen</a> application as well as a `composer.json` file, which is used by PHP’s dependency manager Composer.
 
+The source code in the above repository has two specialities:
+1. There is a costum configuration under `.bp-config/options.json` to use PHP 7, enable some PHP modules and change the webdir to prevent any conflicts with the buildpack source.
+2. We have to handle the composer vendor source directory diffrently for the PHP buildpack in `bootstrap/app.php`.
+
 <div style="text-align:center;margin:3em;">
   <a href="./deploy.html" class="btn btn-primary">I cloned the App source</a>
 </div>
