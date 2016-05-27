@@ -50,25 +50,26 @@ You also have to pass the MariaDB connection credentials to Laravel Lumen in the
 ```php
 $cfEnv = $_ENV['VCAP_SERVICES'];
 if (isset($cfEnv)) {
-    try {
-        $vcapServices = json_decode($_ENV['VCAP_SERVICES']);
-        $mariaDbConnection = head($vcapServices->mariadb)->credentials;
+  try {
+    $vcapServices = json_decode($_ENV['VCAP_SERVICES']);
+    $mariaDbConnection = head($vcapServices->mariadb)->credentials;
 
-        putenv('DB_CONNECTION=mysql');
-        putenv('DB_HOST=' . $mariaDbConnection->host);
-        putenv('DB_PORT=' . $mariaDbConnection->port);
-        putenv('DB_DATABASE=' . $mariaDbConnection->database);
-        putenv('DB_USERNAME=' . $mariaDbConnection->username);
-        putenv('DB_PASSWORD=' . $mariaDbConnection->password);
-        putenv('APP_ENV=production');
-        putenv('APP_DEBUG=false');
-        putenv('APP_KEY=CFENV!!!');
-    }
-    catch (Exception $e) {
-        dd($e->getMessage());
-    }
+    putenv('DB_CONNECTION=mysql');
+    putenv('DB_HOST=' . $mariaDbConnection->host);
+    putenv('DB_PORT=' . $mariaDbConnection->port);
+    putenv('DB_DATABASE=' . $mariaDbConnection->database);
+    putenv('DB_USERNAME=' . $mariaDbConnection->username);
+    putenv('DB_PASSWORD=' . $mariaDbConnection->password);
+    putenv('APP_ENV=production');
+    putenv('APP_DEBUG=false');
+    putenv('APP_KEY=CFENV!!!');
+  }
+  catch (Exception $e) {
+    dd($e->getMessage());
+  }
 }
 ```
+
 This checks if the app is running in the cloud. If not, it falls back to to use the values in `.env`. This allows you to run your app locally as well as in the cloud without having to configure anything differently.
 
 Now we like to apply some changes to `app/Http/routes.php`.
@@ -77,90 +78,91 @@ Add the following code to have a route which triggers some migration task:
 
 ```php
 $app->get('/migrate', function () {
-    try {
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        return response()->json(['migrated' => true]);
-    } catch (Exception $e) {
-        return response()->json([
-            'error' => $e->getMessage(),
-            'trace' => $e->getTrace()
-        ]);
-    }
+  try {
+    \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+    return response()->json(['migrated' => true]);
+  } catch (Exception $e) {
+    return response()->json([
+      'error' => $e->getMessage(),
+      'trace' => $e->getTrace()
+    ]);
+  }
 });
-
 ```
-This migration tasks takes all migration files from `database/migrations/*` and executes the SQL code so we have some tables in our MariaDB.
 
-Next we add some routes to make actual changes on the database:
+This migration task takes all migration files from `database/migrations/*` and executes the SQL code so we have some tables in our MariaDB.
+
+Next we add some routes to `app/Http/routes.php` to make actual changes on the database:
 
 ```php
 $app->get('/users/add/{amount}', function ($amount) {
-    $faker = Faker\Factory::create();
-    $users = [];
+  $faker = Faker\Factory::create();
+  $users = [];
 
-    for ($i = 0; $i < $amount; $i++) {
-        array_push($users, [
-          'firstName' => $faker->firstName,
-          'lastName' => $faker->lastName,
-          'birthday' => $faker->date(),
-          'email' => $i . $faker->email,
-          'password' => $faker->password
-        ]);
-    }
-    try {
-        \Illuminate\Support\Facades\DB::table('users')->insert($users);
-        return response()->json([
-          'amount' => $amount,
-          'users added' => $users
-        ]);
-    } catch (Exception $e) {
-        return response()->json(
-          [
-            'error' => $e->getMessage(),
-            'trace' => $e->getTrace()
-          ]
-        );
-    }
+  for ($i = 0; $i < $amount; $i++) {
+    array_push($users, [
+      'firstName' => $faker->firstName,
+      'lastName' => $faker->lastName,
+      'birthday' => $faker->date(),
+      'email' => $i . $faker->email,
+      'password' => $faker->password
+    ]);
+  }
+  try {
+    \Illuminate\Support\Facades\DB::table('users')->insert($users);
+    return response()->json([
+      'amount' => $amount,
+      'users added' => $users
+    ]);
+  } catch (Exception $e) {
+    return response()->json(
+      [
+        'error' => $e->getMessage(),
+        'trace' => $e->getTrace()
+      ]
+    );
+  }
 });
 
 $app->get('/users', function () {
-    $result = \Illuminate\Support\Facades\DB::table('users')->get();
-    $count = \Illuminate\Support\Facades\DB::table('users')->count();
-    return response()->json([
-      'count' => $count,
-      'users' => $result
-    ]);
+  $result = \Illuminate\Support\Facades\DB::table('users')->get();
+  $count = \Illuminate\Support\Facades\DB::table('users')->count();
+  return response()->json([
+    'count' => $count,
+    'users' => $result
+  ]);
 });
 
 $app->get('/users/delete', function () {
-    \Illuminate\Support\Facades\DB::table('users')->truncate();
-    $result = \Illuminate\Support\Facades\DB::table('users')->get();
-    return response()->json(['users' => $result]);
+  \Illuminate\Support\Facades\DB::table('users')->truncate();
+  $result = \Illuminate\Support\Facades\DB::table('users')->get();
+  return response()->json(['users' => $result]);
 });
 ```
-In patricular we have now the following abilities:
-1. Add a costum amount of users to the database
-2. Read all users
-3. Delete all users
 
-At last we make a change to the already existing route `/` (index). We have to add the missing routes we created just before.
+In patricular, we now have the following abilities:
+
+1. Add a costum amount of users to the database
+1. Read all users
+1. Delete all users
+
+As a last step, we have to make a change to the already existing route `/` (index). For them to work, we need to add the missing routes we have just created:
 
 ```php
 $app->get('/', function () {
-    return response()->json([ 'links' => [
-      url('/version'),
-      url('/env'),
-      url('/migrate'),
-      url('/users'),
-      url('/users/add/5'),
-      url('/users/delete')
-    ]]);
+  return response()->json([ 'links' => [
+    url('/version'),
+    url('/env'),
+    url('/migrate'),
+    url('/users'),
+    url('/users/add/5'),
+    url('/users/delete')
+  ]]);
 });
 ```
-This should be the final looking of the index route.
-
 
 So let's push all these changes to the cloud using
+
 <pre class="terminal">
 $ cf push my-php-app
 </pre>
@@ -168,7 +170,7 @@ $ cf push my-php-app
 You can access other services like Redis or MongoDB in a similar matter, simply by binding them to your app and accessing them through the environment variables.
 
 <p class="note">
-  <strong>Pro Tip</strong>: You have to run <code>/migrate</code> before you can use <code>/users</code>.
+  <strong>Important</strong>: You have to access <code>/migrate</code> before you can use the <code>/users</code> endpoint.
 </p>
 
 <div style="text-align:center;padding:3em;">
