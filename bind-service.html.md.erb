@@ -140,11 +140,11 @@ $app->get('/users/delete', function () {
 });
 ```
 
-In patricular, we now have the following abilities:
+In patricular, your app can now do the following things:
 
-1. Add a costum amount of users to the database
-1. Read all users
-1. Delete all users
+1. Add a costum amount of users to the database on `GET /users/add/{amount}`
+1. Read all users on `GET /users`
+1. Delete all users on `GET /users/delete`
 
 As a last step, we have to make a change to the already existing route `/` (index). For them to work, we need to add the missing routes we have just created:
 
@@ -170,7 +170,7 @@ $ cf push my-php-app
 You can access other services like Redis or MongoDB in a similar matter, simply by binding them to your app and accessing them through the environment variables.
 
 <p class="note">
-  <strong>Important</strong>: You have to access <code>/migrate</code> before you can use the <code>/users</code> endpoint.
+  <strong>Important</strong>: You have to hit the <code>/migrate</code> endpoint once to perform a database migration before you can use the <code>/users</code> endpoint.
 </p>
 
 <div style="text-align:center;padding:3em;">
