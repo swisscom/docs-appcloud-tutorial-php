@@ -43,7 +43,7 @@ Restaging app my-app in org MyOrg / space MySpace as user@mydomain.com...
 
 Now we want to consume our new MariaDB from within our application. Lucky you! Laravel Lumen already comes with everything you need to handle your database.
 
-Your MariaDB's connection credentials are all stored in the environment variable `$_ENV['VCAP_SERVICES']`.
+Your MariaDB's connection credentials are all stored in the environment variable `VCAP_SERVICES`.
 
 You also have to pass the MariaDB connection credentials to Laravel Lumen in the file `config/database.php`. Add the following code right before the `return` statement:
 
@@ -72,9 +72,9 @@ if (isset($cfEnv)) {
 
 This checks if the app is running in the cloud. If not, it falls back to to use the values in `.env`. This allows you to run your app locally as well as in the cloud without having to configure anything differently.
 
-Now we like to apply some changes to `app/Http/routes.php`.
+Now we need to apply some changes to `app/Http/routes.php`.
 
-Add the following code to have a route which triggers some migration task:
+Add the following code to have a route which triggers a DB migration task:
 
 ```php
 $app->get('/migrate', function () {
@@ -140,28 +140,15 @@ $app->get('/users/delete', function () {
 });
 ```
 
-In patricular, your app can now do the following things:
+Your app can now do the following things:
 
 1. Add a costum amount of users to the database on `GET /users/add/{amount}`
 1. Read all users on `GET /users`
 1. Delete all users on `GET /users/delete`
 
-As a last step, we have to make a change to the already existing route `/` (index). For them to work, we need to add the missing routes we have just created:
+<p class="note"><strong>Note</strong>: These are all implemented as GET requests so you can hit them easily from your browser. In production you should use different HTTP methods for these calls.</p>
 
-```php
-$app->get('/', function () {
-  return response()->json([ 'links' => [
-    url('/version'),
-    url('/env'),
-    url('/migrate'),
-    url('/users'),
-    url('/users/add/5'),
-    url('/users/delete')
-  ]]);
-});
-```
-
-So let's push all these changes to the cloud using
+Now let's push all these changes to the cloud using
 
 <pre class="terminal">
 $ cf push my-php-app
@@ -170,7 +157,7 @@ $ cf push my-php-app
 You can access other services like Redis or MongoDB in a similar matter, simply by binding them to your app and accessing them through the environment variables.
 
 <p class="note">
-  <strong>Important</strong>: You have to hit the <code>/migrate</code> endpoint once to perform a database migration before you can use the <code>/users</code> endpoint.
+  <strong>Important</strong>: You have to hit the <code>/migrate</code> endpoint once to perform a database migration before you can use the <code>/users</code> endpoints.
 </p>
 
 <div style="text-align:center;padding:3em;">
