@@ -17,7 +17,7 @@ You now have a functioning git repository that contains a simple <a href="https:
 
 There are two important things to know about the above repository:
 
-1. There is a custom configuration under `.bp-config/options.json` to use PHP 7, enable some PHP modules and change the webdir to prevent any conflicts with the buildpack source.
+1. Cloud Foundry configures the PHP buildpack with the `.bp-config/options.json` file. In the example app we use it to use the latest version of PHP, enable some PHP extensions and change the webdir to prevent any conflicts with the buildpack source.
 1. We have to handle the composer vendor source directory differently for the PHP buildpack in `bootstrap/app.php`.
 
 <div style="text-align:center;margin:3em;">
